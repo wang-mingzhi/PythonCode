@@ -1,0 +1,1 @@
+entryRoad不准确，最好根据driveangle来判断车辆从哪里进的
