@@ -362,7 +362,7 @@ if __name__ == '__main__':
     # divisionoftimeperiod(sheets[0])
     #
     # # 聚类分析结果
-    # elbowmethod(sheets[1].values[1:])            # 画”肘“图来确定最好的聚类中心
+    # elbowmethod(sheets[1].values[1:])            # 画"肘"图来确定最好的聚类中心
     # silhouettecoefficient(sheets[1].values[1:])  # 画轮廓图来确定最好的聚类中心
     # kmeans(sheets[1], 6)                         # 工作日
     # elbowmethod(sheets[2].values[1:])            # 画”肘“图来确定最好的聚类中心
