@@ -9,47 +9,67 @@
 import requests
 import json
 import geopandas
+import pandas as pd
 import matplotlib.pyplot as plt
+from shapely.geometry import MultiPolygon, Polygon
+
+
+def crawler(url, code, crs=None):
+    """
+    爬取url数据并返回GeoDataFrame格式数据
+    @param url: url
+    @param code: 待爬取城市的代码，与url拼合后爬取数据
+    @param crs: GeoDataFrame中数据所在的地理坐标系，默认为：{'init': 'epsg:4326'}
+    @return: GeoDataFrame
+    """
+    if crs is None:
+        crs = {'init': 'epsg:4326'}
+    r_text = requests.get(url + code + '.json')
+    r_text.raise_for_status()  # 当出现错误时及时抛出错误
+    content = json.loads(r_text.content)  # 解析url返回的数据
+    columns, properties, geometry = "", [], []
+    for item in content['features']:
+        columns = item['properties'].keys() if columns == "" else columns  # 获取标题
+        # 获取对应值,并把列表中的值全部转为str否则生成shape文件时会存在问题
+        properties.append([str(item) for item in list(item['properties'].values())])
+        polygons = [Polygon(coordinate[0]) for coordinate in item['geometry']['coordinates']]
+        geometry.append(MultiPolygon(polygons))
+    geofencedf = pd.DataFrame(properties, columns=columns)
+    result = geopandas.GeoDataFrame(geofencedf, geometry=geometry)
+    result.crs = crs
+    return result
 
 
 def draw(data):
-    data = geopandas.read_file(data)
     fig, ax = plt.subplots()
-    data.to_crs({'init': 'epsg:4524'}).plot(ax=ax, alpha=0.85)  # 投影到epsg:4524
+    data.to_crs({'init': 'epsg:4524'}).plot(ax=ax, alpha=0.85)  # 投影到epsg:4524,避免看起来扁
     plt.title("中国地图", fontsize=12)
     plt.tight_layout()
     plt.show()
     
 
-def geojson2shape(file_path, file_save, crs):
+def geojson2shape(data, file_save, crs):
     """
     geojson文件转存为shape文件
-    @param file_path: geojson文件地址
+    @param data: GeoDataFrame格式数据
     @param file_save: shape文件保存地址
     @param crs: 指定shape文件的坐标系统
     @return: None
     """
-    try:
-        data = geopandas.read_file(file_path)
-        data.crs = crs
-        data.to_file(file_save, driver='ESRI Shapefile', encoding='utf-8')
-        print("保存成功，文件存放在："+file_save)
-    except Exception as ex:
-        print(ex)
+    data.to_crs(crs, inplace=True)
+    data.to_file(file_save, driver='ESRI Shapefile', encoding='utf-8')
+    print("保存成功，文件存放在：" + file_save)
 
 
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimSun']
     plt.rcParams['axes.unicode_minus'] = False
 
-    url = r"https://geo.datav.aliyun.com/areas_v2/bound/"
-    r_text = requests.get(url + "100000.json")
-    r_text.raise_for_status()  # 当出现错误时及时抛出错误
-    content = json.loads(r_text.content)
-
+    areacode = '100000_full'
+    gdf = crawler(r"https://geo.datav.aliyun.com/areas_v2/bound/", areacode)
     # 保存为json文件
-    # with open(content['features'][0]['properties']['name'] + ‘.json’, 'w') as file:
+    # with open(areacode + ".json", 'w') as file:
     #     json.dump(content, file)
-    draw(content)
-    geojson2shape(content, '全国矢量地理文件.shp', {'init': 'epsg:4326'})
+    draw(gdf)
+    geojson2shape(gdf, areacode + '.shp', {'init': 'epsg:4326'})
     print("Done")
