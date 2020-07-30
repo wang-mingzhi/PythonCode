@@ -10,34 +10,30 @@ import requests
 import json
 import geopandas
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 
 
-def downloadjson(params):
-    r_text = requests.get(url + params)
-    r_text.raise_for_status()  # 当出现错误时及时抛出错误
-    content = json.loads(r_text.content)
-    file_name = content['features'][0]['properties']['name']
-    path = str(file_name) + ".json"
-    with open(path, 'w') as file:
-        json.dump(content, file)
-
-
-def draw():
-    data = geopandas.read_file('全国.json')
+def draw(data):
+    data = geopandas.read_file(data)
     fig, ax = plt.subplots()
-    data.to_crs({'init': 'epsg:4524'}).plot(ax=ax, alpha=1)  # 投影到epsg:4524
+    data.to_crs({'init': 'epsg:4524'}).plot(ax=ax, alpha=0.85)  # 投影到epsg:4524
     plt.title("中国地图", fontsize=12)
     plt.tight_layout()
     plt.show()
     
 
-def saveshapefile(file_path, file_save):
+def geojson2shape(file_path, file_save, crs):
+    """
+    geojson文件转存为shape文件
+    @param file_path: geojson文件地址
+    @param file_save: shape文件保存地址
+    @param crs: 指定shape文件的坐标系统
+    @return: None
+    """
     try:
         data = geopandas.read_file(file_path)
-        data.crs = {'init': 'epsg:4326'}
+        data.crs = crs
         data.to_file(file_save, driver='ESRI Shapefile', encoding='utf-8')
-        print("--保存成功，文件存放位置："+file_save)
+        print("保存成功，文件存放在："+file_save)
     except Exception as ex:
         print(ex)
 
@@ -45,8 +41,15 @@ def saveshapefile(file_path, file_save):
 if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimSun']
     plt.rcParams['axes.unicode_minus'] = False
+
     url = r"https://geo.datav.aliyun.com/areas_v2/bound/"
-    # downloadjson("100000.json")
-    # saveshapefile('全国.json', '全国矢量地理文件.shp')
-    draw()
+    r_text = requests.get(url + "100000.json")
+    r_text.raise_for_status()  # 当出现错误时及时抛出错误
+    content = json.loads(r_text.content)
+
+    # 保存为json文件
+    # with open(content['features'][0]['properties']['name'] + ‘.json’, 'w') as file:
+    #     json.dump(content, file)
+    draw(content)
+    geojson2shape(content, '全国矢量地理文件.shp', {'init': 'epsg:4326'})
     print("Done")
