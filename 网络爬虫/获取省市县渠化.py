@@ -14,30 +14,26 @@ import matplotlib.pyplot as plt
 from shapely.geometry import MultiPolygon, Polygon
 
 
-def crawler(url, code, crs=None):
+def crawler(_columns, _properties, _geometry, url, _code):
     """
-    爬取url数据并返回GeoDataFrame格式数据
+    爬取url数据并返回_columns, _properties, _geometry
+    @param _columns: 用来存放列名
+    @param _geometry: 用来存放每个区划的polygon
+    @param _properties: 每个区划的相关信息
     @param url: url
-    @param code: 待爬取城市的代码，与url拼合后爬取数据
-    @param crs: GeoDataFrame中数据所在的地理坐标系，默认为：{'init': 'epsg:4326'}
-    @return: GeoDataFrame
+    @param _code: 待爬取城市的代码，与url拼合后爬取数据
+    @return: _columns, _properties, _geometry
     """
-    if crs is None:
-        crs = {'init': 'epsg:4326'}
-    r_text = requests.get(url + code + '.json')
+    r_text = requests.get(url + _code + '.json')
     r_text.raise_for_status()  # 当出现错误时及时抛出错误
     content = json.loads(r_text.content)  # 解析url返回的数据
-    columns, properties, geometry = "", [], []
     for item in content['features']:
-        columns = item['properties'].keys() if columns == "" else columns  # 获取标题
+        if not _columns:
+            _columns.append(list(item['properties'].keys()))
         # 获取对应值,并把列表中的值全部转为str否则生成shape文件时会存在问题
-        properties.append([str(item) for item in list(item['properties'].values())])
+        _properties.append([str(item) for item in list(item['properties'].values())])
         polygons = [Polygon(coordinate[0]) for coordinate in item['geometry']['coordinates']]
-        geometry.append(MultiPolygon(polygons))
-    geofencedf = pd.DataFrame(properties, columns=columns)
-    result = geopandas.GeoDataFrame(geofencedf, geometry=geometry)
-    result.crs = crs
-    return result
+        _geometry.append(MultiPolygon(polygons))
 
 
 def draw(data):
@@ -57,7 +53,13 @@ def geojson2shape(data, file_save, crs):
     @return: None
     """
     data.to_crs(crs, inplace=True)
-    data.to_file(file_save, driver='ESRI Shapefile', encoding='utf-8')
+    data.to_file(file_save + '.shp', driver='ESRI Shapefile', encoding='utf-8')
+    print("保存成功，文件存放在：" + file_save)
+
+
+def geojson2file(data, file_save, crs):
+    data.to_crs(crs, inplace=True)
+    data.to_json(file_save + '.json')
     print("保存成功，文件存放在：" + file_save)
 
 
@@ -65,11 +67,14 @@ if __name__ == "__main__":
     plt.rcParams['font.sans-serif'] = ['SimSun']
     plt.rcParams['axes.unicode_minus'] = False
 
-    areacode = '100000_full'
-    gdf = crawler(r"https://geo.datav.aliyun.com/areas_v2/bound/", areacode)
-    # 保存为json文件
-    # with open(areacode + ".json", 'w') as file:
-    #     json.dump(content, file)
-    draw(gdf)
-    geojson2shape(gdf, areacode + '.shp', {'init': 'epsg:4326'})
-    print("Done")
+    columns, properties, geometry = [], [], []
+    areacode_list = ['410000_full']
+    for code in areacode_list:
+        crawler(columns, properties, geometry, r"https://geo.datav.aliyun.com/areas_v2/bound/", code)
+    df = pd.DataFrame(properties, columns=columns[0])
+    gdf = geopandas.GeoDataFrame(df, geometry=geometry)
+    gdf.crs = {'init': 'epsg:4326'}  # 设置geojson的地理坐标系
+    draw(gdf)                        # 画出geojson地图
+    # file_name = '省级行政区划'
+    # geojson2shape(gdf, file_name, {'init': 'epsg:4326'})  # 转存为shape文件
+    # print("Done")

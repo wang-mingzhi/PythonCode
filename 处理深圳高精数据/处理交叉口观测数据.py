@@ -23,7 +23,7 @@ def dealdata():
         if not os.path.isfile(path_open):
             continue
 
-        contentList = []
+        contentlist = []
         with open(path_open, encoding='utf-8') as f:
             data = f.readlines()
             json_file = [json.loads(item) for item in data]
@@ -35,14 +35,31 @@ def dealdata():
                 for item in ct2:
                     ct = ct1.copy()
                     ct.extend(item)
-                    contentList.append(ct)
+                    contentlist.append(ct)
 
-        df = pd.DataFrame(columns=title, data=contentList)
+        df = pd.DataFrame(columns=title, data=contentlist)
         df.sort_values(by='time', ascending=True, inplace=True)
         df.drop(axis=0, columns=['track'], inplace=True)
         df['time2'] = df['time'].apply(lambda x: datetime.fromtimestamp(x / 1000.0).strftime("%Y-%m-%d %H:%M:%S.%f"))
         df.to_csv(path_save + '.csv', index=False, encoding='utf_8_sig')
         print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), filename, ' Done')
+
+
+def isintersec(p1, p2, p3, p4):  # 判断两线段是否相交
+    # l1:(p1,p2); l2(p3,p4)
+    if max(p1[0], p2[0]) < min(p3[0], p4[0]):
+        return False
+    if max(p3[0], p4[0]) < min(p1[0], p2[0]):
+        return False
+    if max(p1[1], p2[1]) < min(p3[1], p4[1]):
+        return False
+    if max(p3[1], p4[1]) < min(p1[1], p2[1]):
+        return False
+    if np.cross(p2 - p1, p3 - p1) * np.cross(p4 - p1, p2 - p1) < 0:
+        return False
+    if np.cross(p4 - p3, p1 - p3) * np.cross(p2 - p3, p4 - p3) < 0:
+        return False
+    return True
 
 
 def isincoil(entryroad, n, e):
@@ -58,7 +75,7 @@ def isincoil(entryroad, n, e):
 
 def extractdata(data, result):
     index = pd.Series(range(len(data.columns.to_list())), index=data.columns.to_list())
-    time_index, trackID_index, entryRoad_index = index['time'], index['trackID'], index['entryRoad']
+    time_index, trackid_index, entryroad_index = index['time'], index['trackID'], index['entryRoad']
     n_index, e_index = index['N'], index['E']
 
     ptime, btime = 0, 0
@@ -70,13 +87,13 @@ def extractdata(data, result):
             btime, bcars = ptime, pcars
             pcars = {}
 
-        ptime, trackID = row[time_index], row[trackID_index]
-        pcars[(trackID, ptime)] = bcars.get((trackID, btime), False)
-        temp = 0 if pcars[(trackID, ptime)] else isincoil(row[entryRoad_index], row[n_index], row[e_index])
+        ptime, trackid = row[time_index], row[trackid_index]
+        pcars[(trackid, ptime)] = bcars.get((trackid, btime), False)
+        temp = 0 if pcars[(trackid, ptime)] else isincoil(row[entryroad_index], row[n_index], row[e_index])
         if temp != 0:
             row.extend(temp[0])
             result.append(row)
-            pcars[(trackID, ptime)] = True
+            pcars[(trackid, ptime)] = True
 
 
 def plot(coil):
@@ -114,13 +131,14 @@ def statisticsdata(data):
 
 
 def main():
+    dealedresult = '交通量统计结果-细分结果2.xlsx'
+    rootdir_open = r"F:\18120900\Documents\PythonCode\处理深圳高精数据\Data"
     filenames = os.listdir(rootdir_open)
     title, result = [], []
     print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'Begin')
     for filename in filenames:
         path_open = os.path.join(rootdir_open, filename)
         data = pd.read_csv(path_open, encoding='utf-8')
-        data = data[(data.N <= 2507550) & (data.N >= 2507200) & (data.E <= 814350) & (data.E >= 814100)]
         title = data.columns.to_list() if title == [] else title
         extractdata(data, result)
         print(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), len(data), len(result), filename)
@@ -137,12 +155,16 @@ if __name__ == "__main__":
     # 处理交叉口原始数据
     # dealdata()
 
-    timelist = []
-    coils = pd.read_csv("交叉口线圈设置.csv", encoding='utf-8-sig')
-    coils = coils.set_index('LaneID').T.to_dict()
-    # plot(coils)
+    # timelist = []
+    # coils = pd.read_csv("交叉口线圈设置.csv", encoding='utf-8-sig')
+    # coils = coils.set_index('LaneID').T.to_dict()
+    # # plot(coils)
 
-    rootdir_open = r"F:\18120900\Documents\PythonCode\处理深圳高精数据\Data"
     statisticsresult = '交通量统计结果-按时段划分2.xlsx'
-    dealedresult = '交通量统计结果-细分结果2.xlsx'
-    main()
+    # main()
+
+    condition = pd.read_csv(r"F:\18120900\桌面\condition.csv").values.tolist()
+    condition = [item[0] for item in condition]
+    temp_data = pd.read_csv(r"F:\18120900\桌面\深圳高精\ProcessedData\Data\merger20200331100000.txt.csv")
+    temp_data = temp_data[temp_data['trackID'].isin(condition)]
+    temp_data.to_csv(r"F:\18120900\桌面\result.csv", index=False, encoding='utf_8_sig')
