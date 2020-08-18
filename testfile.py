@@ -19,7 +19,7 @@ def fun():
         time.sleep(0.1)
     return a + b
 
-
+ # 注释
 def dealdata():
     data = pd.read_excel(r"F:\18120900\桌面\河南高考一分一段表-2020.xlsx")
     score = dict(zip(data.iloc[::2, 0], data.iloc[1::2, 0]))
@@ -33,7 +33,7 @@ def dealdata():
 
 if __name__ == "__main__":
     # fun()
-    # dealdata()
+    dealdata()
     sheet = pd.read_excel('河南高考一分一段表-2020.xlsx')
     fig, axes = plt.subplots(2, 1)
     axes[0].plot(sheet['score'], sheet['count'])
