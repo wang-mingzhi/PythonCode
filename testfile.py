@@ -35,14 +35,14 @@ def screenshot():
 
 if __name__ == "__main__":
     # dealdata()
-    # sheet = pd.read_excel('河南高考一分一段表-2020.xlsx')
+    sheet = pd.read_excel('河南高考一分一段表-2020.xlsx')
     fig, axes = plt.subplots(2, 1)
-    # axes[0].plot(sheet['score'], sheet['count'])
-    # axes[1].plot(sheet['score'], sheet['diff'])
+    axes[0].plot(sheet['score'], sheet['count'])
+    axes[1].plot(sheet['score'], sheet['diff'])
     plt.tight_layout()
     plt.show()
-    for k in range(145):
-        screenshot()
-        print(k + 1, time.strftime('%Y%m%d_%H%M%S', time.localtime(time.time())))
-        time.sleep(600)
+    # for k in range(145):
+    #     screenshot()
+    #     print(k + 1, time.strftime('%Y%m%d_%H%M%S', time.localtime(time.time())))
+    #     time.sleep(600)
     print('Done!')

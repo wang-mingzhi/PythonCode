@@ -49,7 +49,11 @@ def drawcartrack(sheet_index):
     # 画出交叉口所在位置
     x = plt.xlim()
     for i in range(len(crossroad)):
-        plt.plot(x, [crossroad.loc[i, 'gdlatitude'], crossroad.loc[i, 'gdlatitude']], 'k-', linewidth=1)
+        plt.plot(x,
+                 [crossroad.loc[i, 'gdlatitude'],
+                  crossroad.loc[i, 'gdlatitude']],
+                 'k-',
+                 linewidth=1)
 
     # 各种图表参数设置
     plt.yticks(crossroad.gdlatitude.tolist(), crossroad.name.tolist())
@@ -346,7 +350,7 @@ def calq(result_dict, distances, r_q_dict):
     return r_q_dict
 
 
-if __name__ == '__main__':
+def main():
     plt.rcParams['font.sans-serif'] = ['simsun']  # 指定默认字体
     plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
     plt.rcParams['font.size'] = '12'  # 设置字体大小
@@ -372,3 +376,8 @@ if __name__ == '__main__':
     # # 子区划分
     # subareadivision()
     plt.show()
+
+
+if __name__ == '__main__':
+    # 由于变量作用域的问题，导致‘__main__’中的变量可能会覆盖子函数中的变量
+    main()

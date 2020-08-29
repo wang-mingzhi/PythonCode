@@ -60,7 +60,7 @@ def pic2video(path, size):
     for item in os.listdir(path):
         if item.endswith('.png'):  # 判断图片后缀是否是.png
             item = os.path.join(path, item)
-            img = cv2.imread(item)  # 使用opencv读取图像，直接返回numpy.ndarray对象，通道顺序为BGR，注意是BGR，通道值默认范围0-255。
+            img = cv2.imread(item)  # 使用opencv读取图像，直接返回numpy.ndarray对象，通道顺序为BGR，注意是BGR，通道值0-255。
             video.write(img)  # 把图片写进视频
     video.release()  # 释放
 
