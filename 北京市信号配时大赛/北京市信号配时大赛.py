@@ -8,6 +8,7 @@ import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import datetime
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from sklearn import metrics
@@ -31,12 +32,40 @@ def dealtrackdata():
         df.to_excel(writer)
 
 
+def plotsegmentdata():
+    plt.figure(figsize=(5.5, 3))
+    plt.subplots_adjust(0.09, 0.16, 0.98, 0.98, 0.2, 0.2)
+    sheets = pd.read_excel('路段数据汇总表.xlsx')
+    sheets['date'] = sheets['date'].apply(lambda x: datetime.datetime.strftime(x, '%Y-%m-%d'))
+    # 画出所有路段的速度变化曲线
+    sns.lineplot(x='time', y='speed', hue='segment', style='direction', data=sheets)
+    plt.xlabel(xlabel='')
+    plt.xticks(rotation=90)
+    plt.legend(fontsize=9, labelspacing=0.2)
+    plt.show()
+    # 画出每条路段的速度变化曲线
+    for name, group in sheets.groupby(by='segment'):
+        plt.figure(figsize=(5.5, 3))
+        plt.subplots_adjust(0.09, 0.16, 0.98, 0.91, 0.2, 0.2)
+        sns.lineplot(x='time',
+                     y='speed',
+                     hue='date',
+                     style='direction',
+                     data=group)
+        plt.title(label=name)
+        plt.xlabel(xlabel='')
+        plt.xticks(rotation=90)
+        plt.gca().yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f'))
+        plt.legend(fontsize=9, labelspacing=0.2)
+        plt.show()
+
+
 def drawcartrack(sheet_index):
     """
     @param sheet_index: [0] data;[1] crossroadinfo
     @return: None
     """
-    plt.figure()
+    plt.figure(figsize=(4, 3.5))
     plt.subplots_adjust(0.2, 0.05, 0.98, 0.98, 0.2, 0.2)
     data = pd.read_excel('轨迹数据.xlsx', sheet_index)
     track, crossroad = data[sheet_index[0]], data[sheet_index[1]]
@@ -140,8 +169,6 @@ def elbowmethod(data):
         # cdist(data, kmeans.cluster_centers_, 'euclidean')求data到各质心
         # cluster_centers_之间的距离平方和，'euclidean'表示使用欧式距离计算
         dist = cdist(data, kmeans_model.cluster_centers_, 'euclidean')
-        # np.min(...)计算每一行中的最小值
-        # sum(...)计算每一轮k值下最小值列表的和
         lst.append(sum(np.min(dist, axis=1)) / data.shape[0])
     plt.figure(figsize=(5, 4))
     plt.subplots_adjust(0.13, 0.12, 0.98, 0.93, 0.2, 0.2)
@@ -351,30 +378,27 @@ def calq(result_dict, distances, r_q_dict):
 
 
 def main():
+    sns.set_style("darkgrid")
     plt.rcParams['font.sans-serif'] = ['simsun']  # 指定默认字体
     plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
     plt.rcParams['font.size'] = '12'  # 设置字体大小
-    sheets = pd.read_excel('Data.xlsx', [0, 1, 2])
+    # sheets = pd.read_excel('Data.xlsx', [0, 1, 2])
     #
-    # # 处理三里河东路的车辆轨迹数据
-    # dealtrackdata()
-    drawcartrack([0, 2])
-    drawcartrack([1, 2])
-    # dealflowtable()
+    # dealtrackdata()                              # 处理三里河东路车辆GPS轨迹数据
+    # drawcartrack([0, 2])                         # 画车辆GPS轨迹数据
+    # drawcartrack([1, 2])                         # 画车辆GPS轨迹数据
+    plotsegmentdata()                            # 画路段数据图，2020.8.22-8.25
+    # dealflowtable()                              # 汇总流量调查数据表
+    # divisionoftimeperiod(sheets[0])              # 划分时段
     #
-    # 时段划分
-    # divisionoftimeperiod(sheets[0])
-    #
-    # # 聚类分析结果
     # elbowmethod(sheets[1].values[1:])            # 画"肘"图来确定最好的聚类中心
     # silhouettecoefficient(sheets[1].values[1:])  # 画轮廓图来确定最好的聚类中心
-    # kmeans(sheets[1], 6)                         # 工作日
+    # kmeans(sheets[1], 6)                         # 工作日聚类分析结果
     # elbowmethod(sheets[2].values[1:])            # 画”肘“图来确定最好的聚类中心
     # silhouettecoefficient(sheets[2].values[1:])  # 画轮廓图来确定最好的聚类中心
-    # kmeans(sheets[2], 6)                         # 休息日
+    # kmeans(sheets[2], 6)                         # 休息日聚类分析结果
     #
-    # # 子区划分
-    # subareadivision()
+    # subareadivision()                            # 交通子区划分
     plt.show()
 
 

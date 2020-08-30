@@ -89,7 +89,7 @@ def statistic(data):
 
 
 def drawyeartrendgram(data, lblname):
-    f, axes = plt.subplots(3, 2.5, sharex='all', sharey='all', figsize=(5.12, 4))
+    f, axes = plt.subplots(3, 2, sharex='all', sharey='all', figsize=(5.12, 4))
     plt.subplots_adjust(0.07, 0.07, 0.98, 0.98, 0, 0)
     for i in range(len(lblname)):
         y = data.iloc[i, 2:]
@@ -198,7 +198,7 @@ def drawKDEfig(data, lblname):
 
 
 def drawbarplot(data):
-    f = plt.figure(figsize=(3, 2.5))
+    plt.figure(figsize=(3, 2.5))
     ax = plt.axes()
     plt.subplots_adjust(0.18, 0.15, 0.98, 0.85, 0.2, 0.2)
     tick_label = data.iloc[:, 0]
