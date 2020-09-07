@@ -32,31 +32,49 @@ def dealtrackdata():
         df.to_excel(writer)
 
 
+def combainexcels():
+    rootdir_open = r"F:\18120900\桌面\北京交通信号配时大赛\原始数据\五棵松周边数据\路段数据-四环西"
+    filenames = os.listdir(rootdir_open)
+    result = pd.DataFrame()
+    for filename in filenames:
+        path_open = os.path.join(rootdir_open, filename)
+        if not os.path.isfile(path_open):
+            continue
+        if result.empty:
+            result = pd.read_excel(path_open, 0)
+        else:
+            result = result.append(pd.read_excel(path_open, 0))
+        print(filename, result.size)
+    result.to_excel(os.path.join(rootdir_open, '路段数据汇总表-四环西.xlsx'))
+
+
 def plotsegmentdata():
-    plt.figure(figsize=(5.5, 3))
-    plt.subplots_adjust(0.09, 0.16, 0.98, 0.98, 0.2, 0.2)
-    sheets = pd.read_excel('路段数据汇总表.xlsx')
-    sheets['date'] = sheets['date'].apply(lambda x: datetime.datetime.strftime(x, '%Y-%m-%d'))
+    sheets = pd.read_excel('路段数据汇总表.xlsx', 1)
+    sheets['日期'] = sheets['日期'].apply(lambda x: datetime.datetime.strftime(x, '%m-%d'))
+    sheets['时间'] = sheets['时间'].apply(lambda x: datetime.time.strftime(x, '%H:%m'))
+
     # 画出所有路段的速度变化曲线
-    sns.lineplot(x='time', y='speed', hue='segment', style='direction', data=sheets)
+    fig, axie = plt.subplots(figsize=(5.5, 3), nrows=2, ncols=1, sharex='col')
+    plt.subplots_adjust(0.09, 0.15, 0.8, 0.93, 0.2, 0.01)
+    sns.lineplot(x='时间', y='速度', hue='路段', style='方向', data=sheets, ax=axie[0], legend=False)
+    sns.lineplot(x='时间', y='拥堵长度', hue='路段', style='方向', data=sheets, ax=axie[1])
+    plt.suptitle('各路段速度变化曲线')
     plt.xlabel(xlabel='')
     plt.xticks(rotation=90)
-    plt.legend(fontsize=9, labelspacing=0.2)
+    plt.legend(labelspacing=0.2, frameon=False, bbox_to_anchor=(1, 1), loc=6)
     plt.show()
+
     # 画出每条路段的速度变化曲线
-    for name, group in sheets.groupby(by='segment'):
-        plt.figure(figsize=(5.5, 3))
-        plt.subplots_adjust(0.09, 0.16, 0.98, 0.91, 0.2, 0.2)
-        sns.lineplot(x='time',
-                     y='speed',
-                     hue='date',
-                     style='direction',
-                     data=group)
-        plt.title(label=name)
+    for name, group in sheets.groupby(by='路段'):
+        fig, axie = plt.subplots(figsize=(5.5, 3), nrows=2, ncols=1, sharex='col')
+        plt.subplots_adjust(0.09, 0.15, 0.84, 0.93, 0.2, 0.01)
+        sns.lineplot(x='时间', y='速度', hue='日期', style='方向', ci=0, data=group, ax=axie[0], legend=False)
+        sns.lineplot(x='时间', y='拥堵长度', hue='日期', style='方向', ci=0, data=group, ax=axie[1])
+        plt.suptitle(name)
         plt.xlabel(xlabel='')
         plt.xticks(rotation=90)
         plt.gca().yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f'))
-        plt.legend(fontsize=9, labelspacing=0.2)
+        plt.legend(labelspacing=0.2, frameon=False, bbox_to_anchor=(1, 1), loc=6)
         plt.show()
 
 
@@ -381,12 +399,13 @@ def main():
     sns.set_style("darkgrid")
     plt.rcParams['font.sans-serif'] = ['simsun']  # 指定默认字体
     plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
-    plt.rcParams['font.size'] = '12'  # 设置字体大小
+    plt.rcParams['font.size'] = '9'  # 设置字体大小
     # sheets = pd.read_excel('Data.xlsx', [0, 1, 2])
     #
     # dealtrackdata()                              # 处理三里河东路车辆GPS轨迹数据
     # drawcartrack([0, 2])                         # 画车辆GPS轨迹数据
     # drawcartrack([1, 2])                         # 画车辆GPS轨迹数据
+    # combainexcels()                              # 合并多个表格
     plotsegmentdata()                            # 画路段数据图，2020.8.22-8.25
     # dealflowtable()                              # 汇总流量调查数据表
     # divisionoftimeperiod(sheets[0])              # 划分时段
@@ -399,9 +418,10 @@ def main():
     # kmeans(sheets[2], 6)                         # 休息日聚类分析结果
     #
     # subareadivision()                            # 交通子区划分
-    plt.show()
+    # plt.show()
 
 
 if __name__ == '__main__':
     # 由于变量作用域的问题，导致‘__main__’中的变量可能会覆盖子函数中的变量
     main()
+    print('Done')
