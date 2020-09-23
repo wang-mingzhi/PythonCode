@@ -40,15 +40,10 @@ def plotradarmap():
             '驾驶员\n执行效率', '守信率', '准时率', '准点率', '服务态度', '车辆内\n外环境']
     Y = [7.34, 7.09, 7.01, 6.75, 6.12, 6.86, 7.31, 7.58, 7.44, 7.46, 7.69, 7.53]
 
-    # 获取 r 与 theta
     theta = np.linspace(0, 360, len(labs), endpoint=False)
-    # 调整角度使得正中在垂直线上
-    # theta += theta[-1] + 90 - 360
-    # 将角度转化为单位弧度
     X_ticks = np.radians(theta)  # x轴标签所在的位置
-    # 首尾相连
-    X = np.append(X_ticks, X_ticks[0])
-    Y = np.append(Y, Y[0])
+    X = np.append(X_ticks, X_ticks[0])  # 首尾相连
+    Y = np.append(Y, Y[0])  # 首尾相连
 
     fig, ax = plt.subplots(figsize=(3.8, 3.8), subplot_kw=dict(projection='polar'))
     ax.plot(X, Y, 'ko-')
@@ -88,4 +83,3 @@ if __name__ == "__main__":
     matplotlib.rcParams['font.sans-serif'] = ['simsun']
     main()
     print('Done!')
-

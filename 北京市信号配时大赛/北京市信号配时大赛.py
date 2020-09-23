@@ -33,6 +33,10 @@ def dealtrackdata():
 
 
 def combainexcels():
+    """
+    合并多个excel表
+    @return: excel表
+    """
     rootdir_open = r"F:\18120900\桌面\北京交通信号配时大赛\原始数据\五棵松周边数据\路段数据-四环西"
     filenames = os.listdir(rootdir_open)
     result = pd.DataFrame()
@@ -48,16 +52,16 @@ def combainexcels():
     result.to_excel(os.path.join(rootdir_open, '路段数据汇总表-四环西.xlsx'))
 
 
-def plotsegmentdata():
+def plotsegmentdata():  # 画路段速度变化曲线图
     sheets = pd.read_excel('路段数据汇总表.xlsx', 1)
     sheets['日期'] = sheets['日期'].apply(lambda x: datetime.datetime.strftime(x, '%m-%d'))
     sheets['时间'] = sheets['时间'].apply(lambda x: datetime.time.strftime(x, '%H:%m'))
 
     # 画出所有路段的速度变化曲线
-    fig, axie = plt.subplots(figsize=(5.5, 3), nrows=2, ncols=1, sharex='col')
+    fig, axis = plt.subplots(figsize=(5.5, 3), nrows=2, ncols=1, sharex='col')
     plt.subplots_adjust(0.09, 0.15, 0.8, 0.93, 0.2, 0.01)
-    sns.lineplot(x='时间', y='速度', hue='路段', style='方向', data=sheets, ax=axie[0], legend=False)
-    sns.lineplot(x='时间', y='拥堵长度', hue='路段', style='方向', data=sheets, ax=axie[1])
+    sns.lineplot(x='时间', y='速度', hue='路段', style='方向', data=sheets, ax=axis[0], legend=False)
+    sns.lineplot(x='时间', y='拥堵长度', hue='路段', style='方向', data=sheets, ax=axis[1])
     plt.suptitle('各路段速度变化曲线')
     plt.xlabel(xlabel='')
     plt.xticks(rotation=90)
@@ -66,10 +70,10 @@ def plotsegmentdata():
 
     # 画出每条路段的速度变化曲线
     for name, group in sheets.groupby(by='路段'):
-        fig, axie = plt.subplots(figsize=(5.5, 3), nrows=2, ncols=1, sharex='col')
+        fig, axis = plt.subplots(figsize=(5.5, 3), nrows=2, ncols=1, sharex='col')
         plt.subplots_adjust(0.09, 0.15, 0.84, 0.93, 0.2, 0.01)
-        sns.lineplot(x='时间', y='速度', hue='日期', style='方向', ci=0, data=group, ax=axie[0], legend=False)
-        sns.lineplot(x='时间', y='拥堵长度', hue='日期', style='方向', ci=0, data=group, ax=axie[1])
+        sns.lineplot(x='时间', y='速度', hue='日期', style='方向', ci=0, data=group, ax=axis[0], legend=False)
+        sns.lineplot(x='时间', y='拥堵长度', hue='日期', style='方向', ci=0, data=group, ax=axis[1])
         plt.suptitle(name)
         plt.xlabel(xlabel='')
         plt.xticks(rotation=90)
@@ -78,7 +82,22 @@ def plotsegmentdata():
         plt.show()
 
 
-def drawcartrack(sheet_index):
+def plottrackspacetimediagram():  # 画车辆轨迹时空图
+    # plt.figure(figsize=(4, 3.5))
+    # data = pd.read_excel('轨迹数据.xlsx', 0)
+    # data['distance'] = data.apply()
+    # for name, group in data.groupby(by='description'):
+    #     time, distance = [0], [0]
+    #     for row in group.sort_values(by=['time'], ascending=True).values.tolist():
+    #         time.append(len(time))
+    #         distance.append()
+    #     plt.plot(time, distance, 'go-')
+    # plt.tight_layout()
+    # plt.show()
+    pass
+
+
+def drawcartrack(sheet_index):  # 画车辆轨迹图
     """
     @param sheet_index: [0] data;[1] crossroadinfo
     @return: None
@@ -395,18 +414,93 @@ def calq(result_dict, distances, r_q_dict):
     return r_q_dict
 
 
+def extra_los_delay():
+    rootdir_open = r"F:\18120900\桌面\北京交通信号配时大赛\交通信号配时大赛-决赛\Synchro模型\0-文件报告"
+    filenames = os.listdir(rootdir_open)
+    result = []
+    for filename in filenames:
+        path_open = os.path.join(rootdir_open, filename)
+        if not os.path.isfile(path_open):
+            continue
+        print(filename)
+        with open(path_open, 'r', encoding='ANSI', errors='ignore') as f:
+            for line in f.readlines():
+                line = line.strip()
+                if line[len(line)-9::] == '2020/9/22':
+                    intersectionname = line[0:len(line)-9]
+                    result.append(filename + '\t' + intersectionname + '\t' + line)
+                if line[0:12] in ['Volume (vph)  ', 'Approach Del', 'Approach LOS', 'Lane Group  ']:
+                    result.append(filename + '\t' + intersectionname + '\t' + line)
+    f = open(os.path.join(rootdir_open, 'result2.txt'), 'w')
+    f.write('\n'.join(result))
+    f.close()
+
+
+def plot_los_delay():
+    filepath = r"F:\18120900\桌面\北京交通信号配时大赛\交通信号配时大赛-决赛\Synchro模型\0-文件报告\result2.csv"
+    data = pd.read_csv(filepath, encoding='gb2312')
+    for name, group in data.groupby('intersection'):
+        width = 0.3  # the width of the bars
+        fig, axis = plt.subplots(figsize=(5.5, 5), nrows=3, ncols=1, sharex='col')
+        plt.subplots_adjust(0.1, 0.1, 0.98, 0.88, 0.2, 0.2)
+
+        data1 = group.loc[lambda d: d['period'] == '9.8早']
+        x = np.array(data1.loc[data1['isoptimized'] == '优化前', 'direction'])
+        label11 = data1.loc[data1['isoptimized'] == '优化前'].set_index('direction').to_dict()['los']
+        rects11 = axis[0].bar(x - width / 2, data1.loc[data1['isoptimized'] == '优化前', 'delay'], width, label='优化前')
+        label12 = data1.loc[data1['isoptimized'] == '优化后'].set_index('direction').to_dict()['los']
+        rects12 = axis[0].bar(x + width / 2, data1.loc[data1['isoptimized'] == '优化后', 'delay'], width, label='优化后')
+        axis[0].set_ylabel('延误/s')
+        axis[0].set_xlabel('早高峰')
+
+        data2 = group.loc[lambda d: d['period'] == '9.8午']
+        x = np.array(data2.loc[data2['isoptimized'] == '优化前', 'direction'])
+        label21 = data2.loc[data2['isoptimized'] == '优化前'].set_index('direction').to_dict()['los']
+        rects21 = axis[1].bar(x - width / 2, data2.loc[data2['isoptimized'] == '优化前', 'delay'], width, label='优化前')
+        label22 = data2.loc[data2['isoptimized'] == '优化后'].set_index('direction').to_dict()['los']
+        rects22 = axis[1].bar(x + width / 2, data2.loc[data2['isoptimized'] == '优化后', 'delay'], width, label='优化后')
+        axis[1].set_ylabel('延误/s')
+        axis[1].set_xlabel('午高峰')
+
+        data3 = group.loc[lambda d: d['period'] == '9.8晚']
+        x = np.array(data3.loc[data3['isoptimized'] == '优化前', 'direction'])
+        label31 = data3.loc[data3['isoptimized'] == '优化前'].set_index('direction').to_dict()['los']
+        rects31 = axis[2].bar(x - width / 2, data3.loc[data3['isoptimized'] == '优化前', 'delay'], width, label='优化前')
+        label32 = data3.loc[data3['isoptimized'] == '优化后'].set_index('direction').to_dict()['los']
+        rects32 = axis[2].bar(x + width / 2, data3.loc[data3['isoptimized'] == '优化后', 'delay'], width, label='优化后')
+        axis[2].set_ylabel('延误/s')
+        axis[2].set_xlabel('晚高峰')
+        plt.xticks([0, 1, 2, 3], ['西进口', '东进口', '南进口', '北进口'])
+
+        autolabel(rects11, axis[0], label11)
+        autolabel(rects12, axis[0], label12)
+        autolabel(rects21, axis[1], label21)
+        autolabel(rects22, axis[1], label22)
+        autolabel(rects31, axis[2], label31)
+        autolabel(rects32, axis[2], label32)
+        plt.suptitle(name)
+        plt.legend(bbox_to_anchor=(0.5, 3.35), loc=8, ncol=2, frameon=False)
+        plt.show()
+
+
+def autolabel(rects, ax, label):
+    for rect in rects:
+        height = rect.get_height()
+        ax.annotate('{0}\n{1}'.format(height, label[int(rect.get_x() + 0.3)]),
+                    xy=(rect.get_x() + rect.get_width() / 2, 0),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom')
+
+
 def main():
-    sns.set_style("darkgrid")
-    plt.rcParams['font.sans-serif'] = ['simsun']  # 指定默认字体
-    plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
-    plt.rcParams['font.size'] = '9'  # 设置字体大小
-    # sheets = pd.read_excel('Data.xlsx', [0, 1, 2])
+    sheets = pd.read_excel('Data.xlsx', [0, 1, 2])
     #
     # dealtrackdata()                              # 处理三里河东路车辆GPS轨迹数据
     # drawcartrack([0, 2])                         # 画车辆GPS轨迹数据
     # drawcartrack([1, 2])                         # 画车辆GPS轨迹数据
     # combainexcels()                              # 合并多个表格
-    plotsegmentdata()                            # 画路段数据图，2020.8.22-8.25
+    # plotsegmentdata()                            # 画路段数据图，2020.8.22-8.25
     # dealflowtable()                              # 汇总流量调查数据表
     # divisionoftimeperiod(sheets[0])              # 划分时段
     #
@@ -423,5 +517,11 @@ def main():
 
 if __name__ == '__main__':
     # 由于变量作用域的问题，导致‘__main__’中的变量可能会覆盖子函数中的变量
-    main()
+    sns.set_style("darkgrid")
+    plt.rcParams['font.sans-serif'] = ['simsun']  # 指定默认字体
+    plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
+    plt.rcParams['font.size'] = '12'  # 设置字体大小
+    # main()
+    # extra_los_delay()
+    plot_los_delay()
     print('Done')
