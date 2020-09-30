@@ -441,7 +441,7 @@ def plot_los_delay():
     data = pd.read_csv(filepath, encoding='gb2312')
     for name, group in data.groupby('intersection'):
         width = 0.3  # the width of the bars
-        fig, axis = plt.subplots(figsize=(5.5, 5), nrows=3, ncols=1, sharex='col')
+        fig, axis = plt.subplots(figsize=(5.5, 4), nrows=3, ncols=1, sharex='col')
         plt.subplots_adjust(0.1, 0.1, 0.98, 0.88, 0.2, 0.2)
 
         data1 = group.loc[lambda d: d['period'] == '9.8早']
@@ -479,7 +479,7 @@ def plot_los_delay():
         autolabel(rects31, axis[2], label31)
         autolabel(rects32, axis[2], label32)
         plt.suptitle(name)
-        plt.legend(bbox_to_anchor=(0.5, 3.35), loc=8, ncol=2, frameon=False)
+        plt.legend(bbox_to_anchor=(0.5, 3.3), loc=8, ncol=2, frameon=False)
         plt.show()
 
 
@@ -520,7 +520,7 @@ if __name__ == '__main__':
     sns.set_style("darkgrid")
     plt.rcParams['font.sans-serif'] = ['simsun']  # 指定默认字体
     plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
-    plt.rcParams['font.size'] = '12'  # 设置字体大小
+    # plt.rcParams['font.size'] = '12'  # 设置字体大小
     # main()
     # extra_los_delay()
     plot_los_delay()
