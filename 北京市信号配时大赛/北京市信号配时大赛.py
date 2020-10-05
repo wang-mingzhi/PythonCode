@@ -15,6 +15,10 @@ from sklearn import metrics
 from sklearn.cluster import KMeans
 from scipy.spatial.distance import cdist
 
+plt.rcParams['font.sans-serif'] = ['simsun']  # 指定默认字体
+plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
+plt.rcParams['font.size'] = '12'  # 设置字体大小
+
 
 def dealtrackdata():
     rootdir_open = r'.\三里河东路5月30日GPS坐标信息'
@@ -174,21 +178,22 @@ def dealflowtable():
             df.to_excel(writer, index=False, sheet_name=key)
 
 
-def kmeans(sheet, n_clusters, looptimes=10):
+def kmeans(sheet, n_clusters, looptimes=5):
     """
     K_Means聚类分析模型
-    @param sheet: 设局集
+    @param sheet: 数据集
     @param n_clusters: 聚类中心数
     @param looptimes: 聚类次数
     @return: None
     """
-    x = sheet.values[1:]
-    elbowmethod(x)
-    silhouettecoefficient(x)
-    result = []
-    for i in range(looptimes):
-        result.append(KMeans(n_clusters=n_clusters).fit(x).predict(x).tolist())
-    print(result)
+    for name, group in sheet.groupby(['交叉口']):
+        x = group.drop(['交叉口', '时间'], axis=1).values
+        # elbowmethod(x)
+        # silhouettecoefficient(x)
+        for i in range(looptimes):
+            result = KMeans(n_clusters=n_clusters).fit(x).predict(x).tolist()
+            result.extend([name, i])
+            print(result)
 
 
 def elbowmethod(data):
@@ -494,7 +499,7 @@ def autolabel(rects, ax, label):
 
 
 def main():
-    sheets = pd.read_excel('Data.xlsx', [0, 1, 2])
+    sheets = pd.read_excel('Data.xlsx', [0, 1, 2, 3])
     #
     # dealtrackdata()                              # 处理三里河东路车辆GPS轨迹数据
     # drawcartrack([0, 2])                         # 画车辆GPS轨迹数据
@@ -506,22 +511,18 @@ def main():
     #
     # elbowmethod(sheets[1].values[1:])            # 画"肘"图来确定最好的聚类中心
     # silhouettecoefficient(sheets[1].values[1:])  # 画轮廓图来确定最好的聚类中心
-    # kmeans(sheets[1], 6)                         # 工作日聚类分析结果
+    kmeans(sheets[3], 12)                         # 工作日聚类分析结果
     # elbowmethod(sheets[2].values[1:])            # 画”肘“图来确定最好的聚类中心
     # silhouettecoefficient(sheets[2].values[1:])  # 画轮廓图来确定最好的聚类中心
     # kmeans(sheets[2], 6)                         # 休息日聚类分析结果
     #
     # subareadivision()                            # 交通子区划分
+    # extra_los_delay()
+    # plot_los_delay()
     # plt.show()
 
 
 if __name__ == '__main__':
-    # 由于变量作用域的问题，导致‘__main__’中的变量可能会覆盖子函数中的变量
     sns.set_style("darkgrid")
-    plt.rcParams['font.sans-serif'] = ['simsun']  # 指定默认字体
-    plt.rcParams['axes.unicode_minus'] = False  # 解决保存图像是负号'-'显示为方块的问题
-    # plt.rcParams['font.size'] = '12'  # 设置字体大小
-    # main()
-    # extra_los_delay()
-    plot_los_delay()
+    main()
     print('Done')

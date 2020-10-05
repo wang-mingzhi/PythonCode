@@ -51,5 +51,5 @@ with open(r"F:\18120900\桌面\VOLUME.CSV", 'r', encoding='utf-8') as f:
 
 df = pd.DataFrame(result)
 # 保存的位置，可以自己定义
-df.to_csv(r'F:\18120900\桌面\VOLUME-result.CSV', encoding='utf-8', index=None)
+df.to_csv(r'F:\18120900\桌面\VOLUME-result.CSV', encoding='utf-8_sig', index=None)
 print('Done')
